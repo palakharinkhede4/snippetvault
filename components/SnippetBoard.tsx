@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 
+const FREE_PLAN_SNIPPET_LIMIT = 5; // keep in sync with lib/stripe.ts
+
 type Snippet = {
   id: string;
   title: string;
@@ -89,6 +91,12 @@ export default function SnippetBoard({
 
   return (
     <div className="mt-8">
+      <p className="mb-4 text-sm text-ink/60">
+        {plan === "pro"
+          ? "Pro plan — unlimited snippets."
+          : `Starter plan — ${snippets.length}/${FREE_PLAN_SNIPPET_LIMIT} snippets used.`}
+      </p>
+
       {/* Create form */}
       <form onSubmit={handleCreate} className="rounded-card border border-ink/15 bg-white/50 p-5">
         <div className="grid gap-3 sm:grid-cols-2">

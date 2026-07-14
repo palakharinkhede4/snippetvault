@@ -2,7 +2,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { FREE_PLAN_SNIPPET_LIMIT } from "@/lib/stripe";
 import SnippetBoard from "@/components/SnippetBoard";
 import NavBar from "@/components/NavBar";
 
@@ -25,11 +24,6 @@ export default async function DashboardPage() {
       <NavBar plan={user.plan} email={user.email} />
       <div className="mx-auto max-w-4xl px-6 py-10">
         <h1 className="font-display text-3xl">Your drawer</h1>
-        <p className="mt-1 text-sm text-ink/60">
-          {user.plan === "pro"
-            ? "Pro plan — unlimited snippets."
-            : `Starter plan — ${snippets.length}/${FREE_PLAN_SNIPPET_LIMIT} snippets used.`}
-        </p>
 
         <SnippetBoard
           initialSnippets={snippets.map((s) => ({
