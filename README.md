@@ -13,7 +13,7 @@ Stripe in test mode.
 - **Database:** Postgres via Prisma
 - **Auth:** NextAuth.js, credentials provider (email + password), JWT sessions
 - **Payments:** Stripe Checkout (subscriptions) + webhooks
-- **Deploy target:** Vercel + Neon (both free tiers)
+- **Deploy target:** Railway (free tier), Postgres via Neon
 
 ## Project structure
 
@@ -92,23 +92,52 @@ and your live URL once deployed.
      the production env var.
 5. Test card for checkout: `4242 4242 4242 4242`, any future expiry, any CVC, any ZIP.
 
-## 5. Deploy for free (Vercel)
+## 5. Deploy for free (Railway)
 
 1. Push this repo to GitHub.
-2. Go to https://vercel.com → **Add New Project** → import the repo.
-3. In **Environment Variables**, add everything from your `.env` — but set
-   `NEXTAUTH_URL` to the URL Vercel will give you, e.g.
-   `https://your-app.vercel.app` (you can add/edit it after the first deploy once you
-   know the final URL).
-4. Deploy.
-5. Once live, go back to Stripe → Webhooks → add the production endpoint described in
-   step 4 above, using your real Vercel URL, and update `STRIPE_WEBHOOK_SECRET` in
-   Vercel's env vars to match, then redeploy.
-6. Visit your live URL, sign up, and click **Upgrade to Pro** with the Stripe test card
+2. Go to https://railway.app → **New Project** → **Deploy from GitHub repo** → select this
+   repo.
+3. Railway auto-detects the Next.js app and builds it. Go to the service's **Variables**
+   tab and add everything from your `.env`:
+   - `DATABASE_URL`, `NEXTAUTH_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_PRO_PRICE_ID`,
+     `STRIPE_WEBHOOK_SECRET` — same values as local
+   - `NEXTAUTH_URL` — leave a placeholder for now; you'll set the real value in step 5
+4. Go to the service's **Settings → Networking** tab → under "Public Networking," click
+   **Generate Domain** if one hasn't been created yet. Copy the domain it gives you, e.g.
+   `your-app.up.railway.app`.
+5. Back in **Variables**, set `NEXTAUTH_URL` to that domain with `https://` and **no
+   trailing slash**, e.g. `https://your-app.up.railway.app`. Save — Railway redeploys
+   automatically on variable changes.
+6. In Stripe (test mode) → **Developers → Webhooks** → **Add destination** (or "Add
+   endpoint" depending on the dashboard version) → set the URL to
+   `https://your-app.up.railway.app/api/stripe/webhook` → select events
+   `checkout.session.completed`, `invoice.paid`, `customer.subscription.updated`,
+   `customer.subscription.deleted` → create it. Open the new endpoint, reveal its
+   **Signing secret** (`whsec_...`), and put that value — not your local CLI one — into
+   Railway's `STRIPE_WEBHOOK_SECRET`, then let it redeploy.
+7. Visit your live URL, sign up, and click **Upgrade to Pro** with the Stripe test card
    to confirm the whole loop — checkout → webhook → account upgraded — works end to end.
 
 That's the whole path from `git push` to a public URL with working test-mode payments,
 at no cost.
+
+### Troubleshooting a Railway build failure
+
+If the build fails on a security-vulnerability check, it's a flagged dependency version,
+not a code issue — bump the affected package in `package.json` to the patched version it
+names and redeploy. If the build fails with a prerender error mentioning
+`useSearchParams`, any page using that hook needs to be wrapped in a React `<Suspense>`
+boundary (already done for `/signup` in this repo, but keep this in mind if you add new
+pages that read query params).
+
+### If the live URL won't load in your browser
+
+If the page fails to load with something like `DNS_PROBE_POSSIBLE` but the deployment
+shows "Success" in Railway, it's almost always your local network's DNS, not the app —
+some school/office networks or VPNs block resolution of unfamiliar domains. Confirm by
+running `nslookup your-app.up.railway.app` in a terminal on your own machine (not
+Railway's Console tab); a `Query refused` response means switching your network adapter's
+DNS to a public resolver (e.g. Cloudflare's `1.1.1.1` / `1.0.0.1`) will fix it.
 
 ## Notes on the plan gate
 
