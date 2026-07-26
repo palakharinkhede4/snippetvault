@@ -6,7 +6,7 @@ import { sendOtpEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
   try {
-    const { email } = await req.json();
+    const { email, mode } = await req.json();
 
     if (!email) {
       return NextResponse.json({ error: "Email is required." }, { status: 400 });
@@ -23,7 +23,26 @@ export async function POST(req: Request) {
 
     const normalizedEmail = String(email).toLowerCase().trim();
 
-    // 2. Generate random 6-digit numeric OTP code
+    // 2. Account existence checks for Login vs Signup modes
+    const existingUser = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
+
+    if (mode === "login" && !existingUser) {
+      return NextResponse.json(
+        { error: "No account found with this email. Please sign up first." },
+        { status: 404 }
+      );
+    }
+
+    if (mode === "signup" && existingUser) {
+      return NextResponse.json(
+        { error: "An account with this email already exists. Please log in instead." },
+        { status: 409 }
+      );
+    }
+
+    // 3. Generate random 6-digit numeric OTP code
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const codeHash = await bcrypt.hash(otpCode, 10);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
@@ -40,7 +59,7 @@ export async function POST(req: Request) {
       },
     });
 
-    // 3. Dispatch OTP via email (or server log in dev)
+    // 4. Dispatch OTP via email (or server log in dev)
     await sendOtpEmail(normalizedEmail, otpCode);
 
     return NextResponse.json({
@@ -50,7 +69,7 @@ export async function POST(req: Request) {
   } catch (err: any) {
     console.error("send-otp error:", err);
     return NextResponse.json(
-      { error: "Failed to send verification code. Please try again." },
+      { error: err.message || "Failed to send verification code. Please try again." },
       { status: 500 }
     );
   }

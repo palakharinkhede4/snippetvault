@@ -28,7 +28,7 @@ export default function OtpAuthForm({ mode = "login" }: { mode?: "login" | "sign
       const res = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, mode }),
       });
       const data = await res.json();
 
@@ -80,11 +80,13 @@ export default function OtpAuthForm({ mode = "login" }: { mode?: "login" | "sign
       </Link>
       
       <h1 className="mt-6 font-display text-2xl">
-        {mode === "signup" ? "Start your drawer" : "Welcome to SnippetVault"}
+        {mode === "signup" ? "Start your drawer" : "Welcome back"}
       </h1>
       <p className="mt-1 text-sm text-ink/60">
         {step === "email"
-          ? "Enter your email to receive a 6-digit sign-in code."
+          ? mode === "signup"
+            ? "Create an account using your email address."
+            : "Enter your email to receive a 6-digit login code."
           : `Enter the 6-digit code sent to ${email}`}
       </p>
 
@@ -102,20 +104,56 @@ export default function OtpAuthForm({ mode = "login" }: { mode?: "login" | "sign
             />
           </div>
 
-          {error && <p className="text-sm text-rust">{error}</p>}
+          {error && (
+            <div className="rounded-card bg-rust/10 p-3 text-sm text-rust">
+              <p>{error}</p>
+              {error.includes("No account found") && (
+                <Link href="/signup" className="mt-1 inline-block text-xs font-semibold underline text-ink">
+                  Click here to Create an Account →
+                </Link>
+              )}
+              {error.includes("already exists") && (
+                <Link href="/login" className="mt-1 inline-block text-xs font-semibold underline text-ink">
+                  Click here to Log In instead →
+                </Link>
+              )}
+            </div>
+          )}
 
           <button
             type="submit"
             disabled={loading}
             className="focus-ring w-full rounded-card bg-ink px-4 py-3 font-medium text-paper transition hover:bg-ink-soft disabled:opacity-60"
           >
-            {loading ? "Sending verification code…" : "Continue with Email Code"}
+            {loading
+              ? "Sending verification code…"
+              : mode === "signup"
+              ? "Sign Up with Email Code"
+              : "Log In with Email Code"}
           </button>
+
+          <p className="mt-6 text-center text-sm text-ink/60">
+            {mode === "signup" ? (
+              <>
+                Already have an account?{" "}
+                <Link href="/login" className="text-teal-dark underline underline-offset-4 font-medium">
+                  Log in
+                </Link>
+              </>
+            ) : (
+              <>
+                No account yet?{" "}
+                <Link href="/signup" className="text-teal-dark underline underline-offset-4 font-medium">
+                  Sign up
+                </Link>
+              </>
+            )}
+          </p>
         </form>
       ) : (
         <form onSubmit={handleVerifyOtp} className="mt-8 space-y-4">
           <div>
-            <label className="block text-sm text-ink/70">6-Digit Code</label>
+            <label className="block text-sm text-ink/70">6-Digit Verification Code</label>
             <input
               type="text"
               required
