@@ -75,8 +75,13 @@ export async function validateRealEmail(email: string): Promise<{ valid: boolean
       };
     }
   } catch (error: any) {
-    if (error.message === "DNS_TIMEOUT") {
-      // If DNS takes too long, we fallback gracefully to passing the check so user isn't stuck
+    // If DNS times out, connection is refused, or network DNS lookup is restricted, fallback gracefully to valid
+    if (
+      error.message === "DNS_TIMEOUT" ||
+      error.code === "ECONNREFUSED" ||
+      error.code === "ENOTFOUND" ||
+      error.code === "ETIMEDOUT"
+    ) {
       return { valid: true };
     }
     return {
