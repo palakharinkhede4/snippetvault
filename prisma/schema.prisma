@@ -8,18 +8,29 @@ datasource db {
 }
 
 model User {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   name           String?
-  email          String   @unique
-  passwordHash   String
-  createdAt      DateTime @default(now())
+  email          String    @unique
+  passwordHash   String?
+  emailVerified  Boolean   @default(false)
+  createdAt      DateTime  @default(now())
 
-  plan                 String   @default("free") // "free" | "pro"
-  stripeCustomerId     String?  @unique
-  stripeSubscriptionId String?  @unique
+  plan                 String    @default("free") // "free" | "pro"
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
   stripeCurrentPeriodEnd DateTime?
 
   snippets Snippet[]
+}
+
+model OtpToken {
+  id        String   @id @default(cuid())
+  email     String
+  codeHash  String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
 }
 
 model Snippet {
