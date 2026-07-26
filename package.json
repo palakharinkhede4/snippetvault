@@ -8,7 +8,8 @@
     "start": "next start",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:flush": "prisma db push --force-reset"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { validateRealEmail } from "@/lib/emailValidation";
 
 export async function POST(req: Request) {
   try {
@@ -9,6 +10,14 @@ export async function POST(req: Request) {
     if (!email || !password || password.length < 8) {
       return NextResponse.json(
         { error: "Enter an email and a password of at least 8 characters." },
+        { status: 400 }
+      );
+    }
+
+    const emailCheck = await validateRealEmail(email);
+    if (!emailCheck.valid) {
+      return NextResponse.json(
+        { error: emailCheck.reason || "Please provide a valid, real email address." },
         { status: 400 }
       );
     }
