@@ -32,6 +32,13 @@ export async function validateRealEmail(email: string): Promise<{ valid: boolean
 
   const normalized = email.toLowerCase().trim();
 
+  if (!normalized.includes("@")) {
+    return {
+      valid: false,
+      reason: "Please include an '@' in the email address (e.g. palakharinkhede1@gmail.com).",
+    };
+  }
+
   // 1. Strict RFC format check (ensures local part, @, domain, and valid TLD format)
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   if (!emailRegex.test(normalized)) {
