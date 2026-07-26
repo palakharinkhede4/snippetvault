@@ -31,7 +31,7 @@ export default function LandingPage() {
       <header className="border-b border-ink/10">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <Link href="/" className="font-display text-xl italic tracking-tight text-ink">
-            Cache
+            SnippetVault
           </Link>
           <nav className="flex items-center gap-6 text-sm">
             <a href="#features" className="hidden text-ink/70 hover:text-ink sm:inline">
@@ -174,7 +174,7 @@ export default function LandingPage() {
       </section>
 
       <footer className="border-t border-ink/10 px-6 py-10 text-center text-xs text-ink/50">
-        Cache — built for people tired of re-writing the same fifteen lines.
+        SnippetVault — built for people tired of re-writing the same fifteen lines.
       </footer>
     </main>
   );

@@ -8,7 +8,7 @@ export default function NavBar({ plan, email }: { plan: string; email: string })
     <header className="border-b border-ink/10 bg-paper">
       <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
         <Link href="/dashboard" className="font-display text-lg italic text-ink">
-          Cache
+          SnippetVault
         </Link>
         <div className="flex items-center gap-5 text-sm">
           <span className="hidden text-ink/50 sm:inline">{email}</span>

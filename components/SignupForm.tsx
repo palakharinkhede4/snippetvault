@@ -57,7 +57,7 @@ export default function SignupForm() {
   return (
     <div className="w-full max-w-sm">
       <Link href="/" className="font-display text-xl italic text-ink">
-        Cache
+        SnippetVault
       </Link>
       <h1 className="mt-6 font-display text-2xl">Start your drawer</h1>
       <p className="mt-1 text-sm text-ink/60">Free forever for up to 5 snippets.</p>

@@ -1,4 +1,4 @@
-# Cache — a card catalog for your snippets
+# SnippetVault — a card catalog for your snippets
 
 Save, tag, and search the code and prompts you keep re-writing from memory. Free plan holds
 5 snippets; Pro ($9/mo) is unlimited. Any snippet can be flipped to public and shared with a

@@ -11,7 +11,7 @@ export default async function PublicSnippetPage({ params }: { params: { id: stri
     <main className="flex min-h-screen items-center justify-center bg-ink px-6 py-16">
       <div className="w-full max-w-xl rounded-card border border-paper/15 bg-paper p-6 text-ink">
         <div className="mb-3 border-b border-dashed border-ink/20 pb-2 font-mono text-[10px] uppercase tracking-wide text-rust">
-          shared from Cache
+          shared from SnippetVault
         </div>
         <h1 className="font-display text-2xl">{snippet.title}</h1>
         {snippet.tags && (
@@ -31,7 +31,7 @@ export default async function PublicSnippetPage({ params }: { params: { id: stri
         </pre>
         <p className="mt-6 text-center text-xs text-ink/40">
           <Link href="/" className="underline underline-offset-4">
-            Keep your own drawer on Cache →
+            Keep your own drawer on SnippetVault →
           </Link>
         </p>
       </div>

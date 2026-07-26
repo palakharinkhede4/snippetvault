@@ -23,7 +23,7 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Cache — a card catalog for your snippets",
+  title: "SnippetVault — a card catalog for your snippets",
   description:
     "Save, tag, and find the code and prompts you reuse. Share any snippet with a single link.",
 };

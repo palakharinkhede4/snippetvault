@@ -37,7 +37,7 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center bg-paper px-6">
       <div className="w-full max-w-sm">
         <Link href="/" className="font-display text-xl italic text-ink">
-          Cache
+          SnippetVault
         </Link>
         <h1 className="mt-6 font-display text-2xl">Welcome back</h1>
 
