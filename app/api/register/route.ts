@@ -2,14 +2,15 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { validateRealEmail } from "@/lib/emailValidation";
+import { validatePassword } from "@/lib/passwordValidation";
 
 export async function POST(req: Request) {
   try {
     const { name, email, password } = await req.json();
 
-    if (!email || !password || password.length < 8) {
+    if (!email || !password) {
       return NextResponse.json(
-        { error: "Enter an email and a password of at least 8 characters." },
+        { error: "Email address and password are required." },
         { status: 400 }
       );
     }
@@ -18,6 +19,17 @@ export async function POST(req: Request) {
     if (!emailCheck.valid) {
       return NextResponse.json(
         { error: emailCheck.reason || "Please provide a valid, real email address." },
+        { status: 400 }
+      );
+    }
+
+    const passwordCheck = validatePassword(password);
+    if (!passwordCheck.valid) {
+      return NextResponse.json(
+        {
+          error: `Password security standards not met: ${passwordCheck.errors.join(", ")}.`,
+          details: passwordCheck.errors,
+        },
         { status: 400 }
       );
     }
@@ -39,6 +51,7 @@ export async function POST(req: Request) {
         name: name || null,
         email: normalizedEmail,
         passwordHash,
+        emailVerified: true,
       },
     });
 

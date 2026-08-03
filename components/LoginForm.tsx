@@ -5,54 +5,23 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 
-export default function SignupForm() {
+export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const intendedPlan = searchParams.get("plan");
 
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Live password security checks
-  const passwordCriteria = [
-    { label: "At least 8 characters", met: password.length >= 8 },
-    { label: "At least one uppercase letter (A-Z)", met: /[A-Z]/.test(password) },
-    { label: "At least one lowercase letter (a-z)", met: /[a-z]/.test(password) },
-    { label: "At least one number (0-9)", met: /[0-9]/.test(password) },
-    { label: "At least one special character (!@#$%^&*)", met: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) },
-  ];
-
-  const allCriteriaMet = passwordCriteria.every((c) => c.met);
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-
-    if (!allCriteriaMet) {
-      setError("Please ensure your password meets all security criteria.");
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email: email.trim(), password }),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Something went wrong.");
-        setLoading(false);
-        return;
-      }
-
       const signInRes = await signIn("credentials", {
         email: email.trim(),
         password,
@@ -62,7 +31,7 @@ export default function SignupForm() {
       setLoading(false);
 
       if (signInRes?.error) {
-        setError("Account created, but sign-in failed. Try logging in.");
+        setError("Invalid email or password. Please try again.");
         return;
       }
 
@@ -82,21 +51,11 @@ export default function SignupForm() {
       <Link href="/" className="font-display text-xl italic text-ink">
         SnippetVault
       </Link>
-      <h1 className="mt-6 font-display text-2xl">Start your drawer</h1>
-      <p className="mt-1 text-sm text-ink/60">Free forever for up to 5 snippets.</p>
+      
+      <h1 className="mt-6 font-display text-2xl">Welcome back</h1>
+      <p className="mt-1 text-sm text-ink/60">Log in to your account using your email and password.</p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-        <div>
-          <label className="block text-sm text-ink/70">Name (optional)</label>
-          <input
-            type="text"
-            placeholder="Jane Doe"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="focus-ring mt-1 w-full rounded-card border border-ink/20 bg-white px-3 py-2 text-sm"
-          />
-        </div>
-
         <div>
           <label className="block text-sm text-ink/70">Email address</label>
           <input
@@ -107,7 +66,6 @@ export default function SignupForm() {
             onChange={(e) => setEmail(e.target.value)}
             className="focus-ring mt-1 w-full rounded-card border border-ink/20 bg-white px-3 py-2 text-sm"
           />
-          <p className="mt-1 text-[11px] text-ink/40">Must be a real email address with active mail servers.</p>
         </div>
 
         <div>
@@ -129,21 +87,6 @@ export default function SignupForm() {
               {showPassword ? "Hide" : "Show"}
             </button>
           </div>
-
-          {/* Password Security Standard Checklist */}
-          {password.length > 0 && (
-            <div className="mt-3 rounded-card bg-paper-dim/80 p-3 space-y-1.5 text-xs">
-              <p className="font-medium text-ink/70">Password Security Standards:</p>
-              {passwordCriteria.map((c, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <span className={c.met ? "text-teal-dark font-bold" : "text-ink/30"}>
-                    {c.met ? "✓" : "○"}
-                  </span>
-                  <span className={c.met ? "text-ink/80" : "text-ink/50"}>{c.label}</span>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
         {error && (
@@ -154,19 +97,19 @@ export default function SignupForm() {
 
         <button
           type="submit"
-          disabled={loading || (password.length > 0 && !allCriteriaMet)}
+          disabled={loading}
           className="focus-ring w-full rounded-card bg-ink px-4 py-3 font-medium text-paper transition hover:bg-ink-soft disabled:opacity-60"
         >
-          {loading ? "Creating account…" : "Create account"}
+          {loading ? "Signing in…" : "Log In"}
         </button>
-      </form>
 
-      <p className="mt-6 text-center text-sm text-ink/60">
-        Already have an account?{" "}
-        <Link href="/login" className="text-teal-dark underline underline-offset-4 font-medium">
-          Log in
-        </Link>
-      </p>
+        <p className="mt-6 text-center text-sm text-ink/60">
+          No account yet?{" "}
+          <Link href="/signup" className="text-teal-dark underline underline-offset-4 font-medium">
+            Sign up
+          </Link>
+        </p>
+      </form>
     </div>
   );
 }
