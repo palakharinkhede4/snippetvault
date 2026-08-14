@@ -73,7 +73,7 @@ export async function sendOtpEmail(to: string, otp: string) {
   // Option 3: If no provider credentials exist in production, throw explicit error
   if (process.env.NODE_ENV === "production") {
     throw new Error(
-      "Email provider is not configured. Please set RESEND_API_KEY or SMTP credentials (SMTP_HOST, SMTP_USER, SMTP_PASS) in Railway environment variables."
+      "Email provider is not configured. Please set RESEND_API_KEY or SMTP credentials (SMTP_HOST, SMTP_USER, SMTP_PASS) in your environment variables (e.g. Vercel dashboard)."
     );
   }
 }

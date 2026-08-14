@@ -10,29 +10,31 @@ Stripe in test mode.
 ## Stack
 
 - **Frontend/Backend:** Next.js 14, React 18, Tailwind CSS
-- **Database:** Postgres via Prisma
-- **Auth:** NextAuth.js, credentials provider (email + password), JWT sessions
+- **Database:** Postgres via Prisma (Neon / Supabase)
+- **Auth:** NextAuth.js (credentials & OTP), JWT sessions
 - **Payments:** Stripe Checkout (subscriptions) + webhooks
-- **Deploy target:** Railway (free tier), Postgres via Neon
+- **Email:** Resend API or SMTP (for OTP verification)
+- **Deploy target:** Vercel (Hobby / Free plan)
 
 ## Project structure
 
 ```
 app/
   page.tsx                 marketing/landing page
-  signup/, login/          auth pages
+  signup/, login/          auth pages (password + OTP support)
   dashboard/                the product (snippet CRUD + search)
   billing/                  plan status, upgrade, manage/cancel
   s/[id]/                   public shareable snippet page
   api/
     register/               create account
     auth/[...nextauth]/     NextAuth handler
+    auth/send-otp/          generate & dispatch OTP codes
     snippets/               CRUD, plan-gated on create
     stripe/checkout/        creates a Stripe Checkout session
     stripe/webhook/         handles checkout.session.completed, invoice.paid, subscription updates
     stripe/portal/          Stripe billing portal (manage/cancel)
-prisma/schema.prisma        User + Snippet models
-lib/                        prisma client, authOptions, stripe client
+prisma/schema.prisma        User, OtpToken, Snippet models
+lib/                        prisma client, authOptions, email, stripe client
 components/                 shared client components
 ```
 
@@ -55,95 +57,73 @@ Visit http://localhost:3000.
 ## 2. Free Postgres database (Neon)
 
 1. Go to https://neon.tech → sign up → **New Project**.
-2. Copy the **pooled connection string** it gives you.
+2. Copy the **Pooled connection string** (ends with `?sslmode=require`).
 3. Paste it into `DATABASE_URL` in `.env`.
-4. Run `npx prisma db push` to create the tables.
+4. Run `npx prisma db push` to create the tables in your database.
 
-(Supabase's free Postgres works the same way if you'd rather use that.)
+*(Supabase's free Postgres or any standard Postgres service works the same way).*
 
 ## 3. Auth secret
+
+Generate a 32-byte secret:
 
 ```bash
 openssl rand -base64 32
 ```
 
-Paste the output into `NEXTAUTH_SECRET`. `NEXTAUTH_URL` is `http://localhost:3000` locally
-and your live URL once deployed.
+Paste the output into `NEXTAUTH_SECRET`. Set `NEXTAUTH_URL` to `http://localhost:3000` for local dev.
 
-## 4. Stripe test mode
+## 4. Email (Resend) for OTP verification
 
-1. Create a free account at https://dashboard.stripe.com — stay in **Test mode** (toggle,
-   top right).
-2. **API keys** (https://dashboard.stripe.com/test/apikeys) → copy the **Secret key** into
-   `STRIPE_SECRET_KEY`.
-3. **Products** (https://dashboard.stripe.com/test/products) → **Add product** → name it
-   "Pro", set a **recurring** price of $9.00/month → save → copy the **Price ID**
-   (`price_...`) into `STRIPE_PRO_PRICE_ID`.
+1. Sign up for free at https://resend.com.
+2. Go to **API Keys** → create key → paste into `RESEND_API_KEY`.
+3. Set `RESEND_FROM="SnippetVault <onboarding@resend.dev>"` (or your verified domain).
+
+## 5. Stripe test mode
+
+1. Create a free account at https://dashboard.stripe.com — stay in **Test mode** (toggle at top right).
+2. **API keys** (https://dashboard.stripe.com/test/apikeys) → copy the **Secret key** into `STRIPE_SECRET_KEY`.
+3. **Products** (https://dashboard.stripe.com/test/products) → **Add product** → name it "Pro", set a **recurring** price of $9.00/month → save → copy the **Price ID** (`price_...`) into `STRIPE_PRO_PRICE_ID`.
 4. **Webhooks** (https://dashboard.stripe.com/test/webhooks):
-   - While developing locally, easier to use the CLI instead of the dashboard:
+   - **Local testing via CLI**:
      ```bash
      stripe listen --forward-to localhost:3000/api/stripe/webhook
      ```
-     This prints a `whsec_...` — put it in `STRIPE_WEBHOOK_SECRET`.
-   - For production, add an endpoint pointing at
-     `https://YOUR-DOMAIN/api/stripe/webhook`, subscribe it to
-     `checkout.session.completed`, `invoice.paid`, `customer.subscription.updated`, and
-     `customer.subscription.deleted`, then copy **that** endpoint's signing secret into
-     the production env var.
+     Copy the `whsec_...` into `STRIPE_WEBHOOK_SECRET`.
+   - **Production Vercel URL**:
+     Once deployed on Vercel, create a webhook endpoint in Stripe pointing to:
+     `https://<your-vercel-domain>.vercel.app/api/stripe/webhook`
+     Subscribe to:
+     `checkout.session.completed`, `invoice.paid`, `customer.subscription.updated`, `customer.subscription.deleted`.
+     Copy its signing secret (`whsec_...`) into Vercel's `STRIPE_WEBHOOK_SECRET`.
 5. Test card for checkout: `4242 4242 4242 4242`, any future expiry, any CVC, any ZIP.
 
-## 5. Deploy for free (Railway)
+## 6. Deploy for free to Vercel
 
-1. Push this repo to GitHub.
-2. Go to https://railway.app → **New Project** → **Deploy from GitHub repo** → select this
-   repo.
-3. Railway auto-detects the Next.js app and builds it. Go to the service's **Variables**
-   tab and add everything from your `.env`:
-   - `DATABASE_URL`, `NEXTAUTH_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_PRO_PRICE_ID`,
-     `STRIPE_WEBHOOK_SECRET` — same values as local
-   - `NEXTAUTH_URL` — leave a placeholder for now; you'll set the real value in step 5
-4. Go to the service's **Settings → Networking** tab → under "Public Networking," click
-   **Generate Domain** if one hasn't been created yet. Copy the domain it gives you, e.g.
-   `your-app.up.railway.app`.
-5. Back in **Variables**, set `NEXTAUTH_URL` to that domain with `https://` and **no
-   trailing slash**, e.g. `https://your-app.up.railway.app`. Save — Railway redeploys
-   automatically on variable changes.
-6. In Stripe (test mode) → **Developers → Webhooks** → **Add destination** (or "Add
-   endpoint" depending on the dashboard version) → set the URL to
-   `https://your-app.up.railway.app/api/stripe/webhook` → select events
-   `checkout.session.completed`, `invoice.paid`, `customer.subscription.updated`,
-   `customer.subscription.deleted` → create it. Open the new endpoint, reveal its
-   **Signing secret** (`whsec_...`), and put that value — not your local CLI one — into
-   Railway's `STRIPE_WEBHOOK_SECRET`, then let it redeploy.
-7. Visit your live URL, sign up, and click **Upgrade to Pro** with the Stripe test card
-   to confirm the whole loop — checkout → webhook → account upgraded — works end to end.
-
-That's the whole path from `git push` to a public URL with working test-mode payments,
-at no cost.
-
-### Troubleshooting a Railway build failure
-
-If the build fails on a security-vulnerability check, it's a flagged dependency version,
-not a code issue — bump the affected package in `package.json` to the patched version it
-names and redeploy. If the build fails with a prerender error mentioning
-`useSearchParams`, any page using that hook needs to be wrapped in a React `<Suspense>`
-boundary (already done for `/signup` in this repo, but keep this in mind if you add new
-pages that read query params).
-
-### If the live URL won't load in your browser
-
-If the page fails to load with something like `DNS_PROBE_POSSIBLE` but the deployment
-shows "Success" in Railway, it's almost always your local network's DNS, not the app —
-some school/office networks or VPNs block resolution of unfamiliar domains. Confirm by
-running `nslookup your-app.up.railway.app` in a terminal on your own machine (not
-Railway's Console tab); a `Query refused` response means switching your network adapter's
-DNS to a public resolver (e.g. Cloudflare's `1.1.1.1` / `1.0.0.1`) will fix it.
+1. Push your repository to GitHub:
+   ```bash
+   git add .
+   git commit -m "Deploy to Vercel"
+   git push origin main
+   ```
+2. Go to https://vercel.com → Log in → click **Add New...** → **Project**.
+3. Import your GitHub repository (`palakharinkhede4/snippetvault`).
+4. In the **Configure Project** screen, expand **Environment Variables** and add:
+   - `DATABASE_URL`: Your Neon Postgres pooled connection URL
+   - `NEXTAUTH_SECRET`: Random 32-character string (`openssl rand -base64 32`)
+   - `NEXTAUTH_URL`: `https://your-project-name.vercel.app` (your Vercel project URL)
+   - `STRIPE_SECRET_KEY`: `sk_test_...`
+   - `STRIPE_PRO_PRICE_ID`: `price_...`
+   - `STRIPE_WEBHOOK_SECRET`: `whsec_...` (from Stripe Webhooks step)
+   - `RESEND_API_KEY`: `re_...`
+   - `RESEND_FROM`: `SnippetVault <onboarding@resend.dev>`
+5. Click **Deploy**. Vercel will automatically run `prisma generate` and build the Next.js app.
+6. Once deployed, copy your assigned Vercel URL (e.g., `https://snippetvault.vercel.app`):
+   - Ensure `NEXTAUTH_URL` matches this exact domain (no trailing slash).
+   - In your Stripe Dashboard, update/add the webhook endpoint for `https://<your-domain>.vercel.app/api/stripe/webhook`.
+7. Visit your live site, sign up / log in with OTP verification, and test snippet creation and Pro upgrade!
 
 ## Notes on the plan gate
 
-The free plan is capped at 5 snippets (`FREE_PLAN_SNIPPET_LIMIT` in `lib/stripe.ts`). The
-cap is enforced server-side in `app/api/snippets/route.ts`, not just hidden in the UI, so
-it can't be bypassed by calling the API directly. When `checkout.session.completed` (or a
-later `invoice.paid` / `customer.subscription.updated`) fires, the webhook updates the
-user's `plan` field in the database — that's the one place plan state is read from, so
-Stripe and the app never disagree about what a user is entitled to.
+The free plan is capped at 5 snippets (`FREE_PLAN_SNIPPET_LIMIT` in `lib/stripe.ts`). The cap is enforced server-side in `app/api/snippets/route.ts`. When Stripe webhook events fire, the user's `plan` field in Postgres is updated directly so Stripe and the app stay in sync.
+
