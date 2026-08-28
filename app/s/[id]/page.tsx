@@ -29,11 +29,14 @@ export default async function PublicSnippetPage({ params }: { params: { id: stri
         <pre className="mt-4 overflow-x-auto whitespace-pre-wrap rounded-card bg-ink/5 p-4 font-mono text-sm">
 {snippet.content}
         </pre>
-        <p className="mt-6 text-center text-xs text-ink/40">
-          <Link href="/" className="underline underline-offset-4">
+        <div className="mt-6 flex items-center justify-between text-xs text-ink/50 border-t border-ink/10 pt-4">
+          <Link href="/" className="underline underline-offset-4 hover:text-ink">
             Keep your own drawer on SnippetVault →
           </Link>
-        </p>
+          <Link href="/about" className="font-mono text-teal-dark hover:underline underline-offset-4">
+            About Project ↗
+          </Link>
+        </div>
       </div>
     </main>
   );

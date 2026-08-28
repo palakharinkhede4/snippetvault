@@ -33,13 +33,20 @@ export default function LandingPage() {
           <Link href="/" className="font-display text-xl italic tracking-tight text-ink">
             SnippetVault
           </Link>
-          <nav className="flex items-center gap-6 text-sm">
+          <nav className="flex items-center gap-4 sm:gap-6 text-sm">
             <a href="#features" className="hidden text-ink/70 hover:text-ink sm:inline">
               Features
             </a>
             <a href="#pricing" className="hidden text-ink/70 hover:text-ink sm:inline">
               Pricing
             </a>
+            <Link
+              href="/about"
+              className="focus-ring inline-flex items-center gap-1.5 rounded-full border border-teal/40 bg-teal/10 px-3 py-1 font-mono text-xs font-medium text-teal-dark hover:border-teal hover:bg-teal/20 transition"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-teal animate-pulse" />
+              About Project
+            </Link>
             <Link href="/login" className="text-ink/70 hover:text-ink">
               Log in
             </Link>
@@ -173,8 +180,23 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="border-t border-ink/10 px-6 py-10 text-center text-xs text-ink/50">
-        SnippetVault — built for people tired of re-writing the same fifteen lines.
+      <footer className="border-t border-ink/10 px-6 py-10 text-center text-xs text-ink/60">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row">
+          <p>SnippetVault — built for people tired of re-writing the same fifteen lines.</p>
+          <div className="flex items-center gap-6">
+            <Link href="/about" className="font-medium text-teal-dark hover:underline underline-offset-4">
+              About Project & Architecture
+            </Link>
+            <a
+              href="https://www.linkedin.com/in/palakharinkhede/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-ink/60 hover:text-ink hover:underline underline-offset-4"
+            >
+              Created by Palak Harinkhede
+            </a>
+          </div>
+        </div>
       </footer>
     </main>
   );

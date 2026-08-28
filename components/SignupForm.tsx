@@ -79,9 +79,18 @@ export default function SignupForm() {
 
   return (
     <div className="w-full max-w-sm">
-      <Link href="/" className="font-display text-xl italic text-ink">
-        SnippetVault
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link href="/" className="font-display text-xl italic text-ink">
+          SnippetVault
+        </Link>
+        <Link
+          href="/about"
+          className="focus-ring inline-flex items-center gap-1.5 rounded-full border border-teal/40 bg-teal/10 px-2.5 py-0.5 font-mono text-[11px] font-medium text-teal-dark hover:border-teal hover:bg-teal/20 transition"
+        >
+          <span className="h-1.5 w-1.5 rounded-full bg-teal animate-pulse" />
+          About Project
+        </Link>
+      </div>
       <h1 className="mt-6 font-display text-2xl">Start your drawer</h1>
       <p className="mt-1 text-sm text-ink/60">Free forever for up to 5 snippets.</p>
 
