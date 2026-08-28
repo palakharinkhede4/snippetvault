@@ -78,6 +78,16 @@ export default function SnippetBoard({
   }
 
   async function togglePublic(s: Snippet) {
+    setError("");
+
+    // Prevent turning on public sharing if user is free and exceeds 5 snippets
+    if (!s.isPublic && plan === "free" && snippets.length > FREE_PLAN_SNIPPET_LIMIT) {
+      setError(
+        `Public sharing is locked because you have ${snippets.length} snippets (free limit is ${FREE_PLAN_SNIPPET_LIMIT}). Upgrade to Pro or delete down to ${FREE_PLAN_SNIPPET_LIMIT} snippets to enable sharing.`
+      );
+      return;
+    }
+
     const res = await fetch(`/api/snippets/${s.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -86,11 +96,36 @@ export default function SnippetBoard({
     const data = await res.json();
     if (res.ok) {
       setSnippets(snippets.map((x) => (x.id === s.id ? data.snippet : x)));
+    } else {
+      setError(data.error || "Failed to update snippet visibility.");
     }
   }
 
+  const isOverLimit = plan === "free" && snippets.length > FREE_PLAN_SNIPPET_LIMIT;
+
   return (
     <div className="mt-8">
+      {/* Over limit warning banner for downgraded users */}
+      {isOverLimit && (
+        <div className="mb-6 rounded-card border border-amber bg-amber/15 p-4 text-ink shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 font-display text-sm font-semibold text-ink">
+              <span>⚠️</span>
+              <span>Starter Plan Limit Exceeded ({snippets.length}/{FREE_PLAN_SNIPPET_LIMIT} Snippets)</span>
+            </div>
+            <Link
+              href="/billing"
+              className="focus-ring rounded-card bg-teal px-3 py-1 font-mono text-xs font-semibold text-ink hover:bg-teal-dark hover:text-paper transition"
+            >
+              Upgrade to Pro →
+            </Link>
+          </div>
+          <p className="mt-2 text-xs leading-relaxed text-ink/80">
+            All your <strong>{snippets.length}</strong> snippets are preserved safely, but creating new snippets and public sharing are locked. Upgrade to Pro for unlimited snippets or delete snippets down to {FREE_PLAN_SNIPPET_LIMIT} to restore full features.
+          </p>
+        </div>
+      )}
+
       <p className="mb-4 text-sm text-ink/60">
         {plan === "pro"
           ? "Pro plan — unlimited snippets."

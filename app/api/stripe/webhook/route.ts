@@ -66,13 +66,21 @@ export async function POST(req: Request) {
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
         const userId = subscription.metadata?.userId;
+        const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer?.id;
         const isActive = subscription.status === "active" || subscription.status === "trialing";
 
-        if (userId) {
+        let user = userId
+          ? await prisma.user.findUnique({ where: { id: userId } })
+          : customerId
+          ? await prisma.user.findUnique({ where: { stripeCustomerId: customerId } })
+          : null;
+
+        if (user) {
           await prisma.user.update({
-            where: { id: userId },
+            where: { id: user.id },
             data: {
               plan: isActive ? "pro" : "free",
+              stripeSubscriptionId: subscription.id,
               stripeCurrentPeriodEnd: subscription.current_period_end
                 ? new Date(subscription.current_period_end * 1000)
                 : null,

@@ -19,6 +19,22 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
   const { title, content, tags, isPublic } = await req.json();
 
+  if (isPublic === true) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (user?.plan === "free") {
+      const count = await prisma.snippet.count({ where: { userId } });
+      if (count > 5) {
+        return NextResponse.json(
+          {
+            error: `Public sharing is locked because you have ${count} snippets, which exceeds the 5-snippet Starter limit. Upgrade to Pro or delete down to 5 snippets to enable public sharing.`,
+            code: "SHARING_LOCKED_OVER_LIMIT",
+          },
+          { status: 403 }
+        );
+      }
+    }
+  }
+
   const snippet = await prisma.snippet.update({
     where: { id: params.id },
     data: {
