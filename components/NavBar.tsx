@@ -29,6 +29,9 @@ export default function NavBar({ plan, email }: { plan: string; email: string })
           <Link href="/billing" className="text-ink/70 hover:text-ink">
             Billing
           </Link>
+          <Link href="/account" className="text-ink/70 hover:text-ink font-medium">
+            Account
+          </Link>
           <button
             onClick={() => signOut({ callbackUrl: "/" })}
             className="focus-ring text-ink/70 hover:text-ink"

@@ -4,10 +4,9 @@ import { useState } from "react";
 
 export default function BillingActions({
   plan,
-  hasStripeCustomer,
 }: {
   plan: string;
-  hasStripeCustomer: boolean;
+  hasStripeCustomer?: boolean;
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -39,33 +38,6 @@ export default function BillingActions({
     }
   }
 
-  async function goToPortal() {
-    setLoading(true);
-    setError("");
-
-    try {
-      const res = await fetch("/api/stripe/portal", { method: "POST" });
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Could not open the billing portal.");
-        setLoading(false);
-        return;
-      }
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        setError("No portal URL returned.");
-        setLoading(false);
-      }
-    } catch (err: any) {
-      console.error(err);
-      setError("Network or server error opening billing portal.");
-      setLoading(false);
-    }
-  }
-
   return (
     <div className="mt-6">
       {plan === "free" ? (
@@ -77,13 +49,12 @@ export default function BillingActions({
           {loading ? "Redirecting to Stripe…" : "Upgrade to Pro — $9/mo"}
         </button>
       ) : (
-        <button
-          onClick={goToPortal}
-          disabled={loading || !hasStripeCustomer}
-          className="focus-ring rounded-card border border-ink px-5 py-3 font-medium text-ink transition hover:bg-ink hover:text-paper disabled:opacity-60"
-        >
-          {loading ? "Opening Stripe Portal…" : "Manage or cancel subscription"}
-        </button>
+        <div className="flex items-center gap-2.5 rounded-card border border-teal/30 bg-teal/10 px-4 py-3 text-sm font-medium text-teal-dark">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal text-ink text-xs font-bold">
+            ✓
+          </span>
+          <span>Your Pro subscription is active. All features & unlimited storage unlocked.</span>
+        </div>
       )}
       {error && (
         <div className="mt-3 rounded-card bg-rust/10 p-3 text-xs text-rust">

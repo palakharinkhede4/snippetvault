@@ -175,6 +175,12 @@ export default function LoginForm() {
         </Link>
       </div>
 
+      {searchParams.get("deleted") === "1" && !successMessage && (
+        <div className="mt-4 rounded-card border border-ink/20 bg-ink/5 p-3 text-xs text-ink/80 font-medium">
+          Your account and all associated snippets have been permanently deleted.
+        </div>
+      )}
+
       {successMessage && (
         <div className="mt-4 rounded-card border border-teal bg-teal/15 p-3 text-xs text-teal-dark font-medium">
           ✓ {successMessage}
