@@ -5,45 +5,58 @@ import { prisma } from "@/lib/prisma";
 import { stripe, PRO_PRICE_ID } from "@/lib/stripe";
 
 export async function POST() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+    }
 
-  const userId = (session.user as any).id;
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user) return NextResponse.json({ error: "Account not found." }, { status: 404 });
+    const userId = (session.user as any).id;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return NextResponse.json({ error: "Account not found." }, { status: 404 });
+    }
 
-  if (!PRO_PRICE_ID) {
+    if (!PRO_PRICE_ID) {
+      return NextResponse.json(
+        { error: "Stripe price is not configured. Set STRIPE_PRO_PRICE_ID." },
+        { status: 500 }
+      );
+    }
+
+    const appUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+
+    let customerId = user.stripeCustomerId;
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        metadata: { userId: user.id },
+      });
+      customerId = customer.id;
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { stripeCustomerId: customerId },
+      });
+    }
+
+    const checkoutSession = await stripe.checkout.sessions.create({
+      customer: customerId,
+      mode: "subscription",
+      line_items: [{ price: PRO_PRICE_ID, quantity: 1 }],
+      success_url: `${appUrl}/billing?session_id={CHECKOUT_SESSION_ID}&upgraded=1`,
+      cancel_url: `${appUrl}/billing?canceled=1`,
+      metadata: { userId: user.id },
+      subscription_data: {
+        metadata: { userId: user.id },
+      },
+    });
+
+    return NextResponse.json({ url: checkoutSession.url });
+  } catch (err: any) {
+    console.error("Error creating Stripe checkout session:", err);
     return NextResponse.json(
-      { error: "Stripe price is not configured. Set STRIPE_PRO_PRICE_ID." },
+      { error: err?.message || "Failed to create checkout session." },
       { status: 500 }
     );
   }
-
-  const appUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-
-  let customerId = user.stripeCustomerId;
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: user.email,
-      metadata: { userId: user.id },
-    });
-    customerId = customer.id;
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { stripeCustomerId: customerId },
-    });
-  }
-
-  const checkoutSession = await stripe.checkout.sessions.create({
-    customer: customerId,
-    mode: "subscription",
-    success_url: `${appUrl}/billing?session_id={CHECKOUT_SESSION_ID}&upgraded=1`,
-    cancel_url: `${appUrl}/billing?canceled=1`,
-    metadata: { userId: user.id },
-    subscription_data: {
-      metadata: { userId: user.id },
-    },
-  });
-
-  return NextResponse.json({ url: checkoutSession.url });
 }

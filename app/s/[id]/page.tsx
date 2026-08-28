@@ -3,22 +3,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 
 export default async function PublicSnippetPage({ params }: { params: { id: string } }) {
-  const snippet = await prisma.snippet.findUnique({
-    where: { id: params.id },
-    include: { user: true },
-  });
+  const snippet = await prisma.snippet.findUnique({ where: { id: params.id } });
 
   if (!snippet || !snippet.isPublic) notFound();
-
-  // If the snippet author is on the free plan and has more than 5 snippets (from previous Pro plan), public sharing is locked
-  if (snippet.user.plan === "free") {
-    const authorSnippetCount = await prisma.snippet.count({
-      where: { userId: snippet.userId },
-    });
-    if (authorSnippetCount > 5) {
-      notFound();
-    }
-  }
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-ink px-6 py-16">

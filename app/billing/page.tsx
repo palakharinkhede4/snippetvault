@@ -7,11 +7,7 @@ import NavBar from "@/components/NavBar";
 import BillingActions from "@/components/BillingActions";
 import { stripe } from "@/lib/stripe";
 
-// Fallback path: if Stripe's webhook hasn't reached this server yet (very common in local
-// dev if `stripe listen` isn't running, or its secret is stale), verify the checkout
-// session directly with Stripe's API on the success redirect and self-heal the DB.
-// The webhook remains the source of truth for renewals/cancellations — this only covers
-// the initial upgrade moment.
+// Reconcile checkout session on redirect (self-healing fallback)
 async function reconcileFromCheckoutSession(sessionId: string, expectedUserId: string) {
   try {
     const checkoutSession = await stripe.checkout.sessions.retrieve(sessionId, {
@@ -19,7 +15,6 @@ async function reconcileFromCheckoutSession(sessionId: string, expectedUserId: s
     });
 
     if (checkoutSession.metadata?.userId && checkoutSession.metadata.userId !== expectedUserId) {
-      console.warn("User ID mismatch on checkout session:", checkoutSession.metadata.userId, "expected:", expectedUserId);
       return;
     }
 
@@ -67,33 +62,8 @@ export default async function BillingPage({
     await reconcileFromCheckoutSession(searchParams.session_id, userId);
   }
 
-  let user = await prisma.user.findUnique({ where: { id: userId } });
+  const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) redirect("/login");
-
-  // Secondary fallback: if still on free plan but user has a Stripe Customer ID, check if they have an active subscription
-  if (user.plan === "free" && user.stripeCustomerId) {
-    try {
-      const subscriptions = await stripe.subscriptions.list({
-        customer: user.stripeCustomerId,
-        status: "active",
-        limit: 1,
-      });
-
-      if (subscriptions.data.length > 0) {
-        const activeSub = subscriptions.data[0];
-        user = await prisma.user.update({
-          where: { id: userId },
-          data: {
-            plan: "pro",
-            stripeSubscriptionId: activeSub.id,
-            stripeCurrentPeriodEnd: new Date(activeSub.current_period_end * 1000),
-          },
-        });
-      }
-    } catch (err) {
-      console.warn("Could not check customer subscriptions for user:", err);
-    }
-  }
 
   const justUpgraded = Boolean(searchParams.session_id || searchParams.upgraded) && user.plan === "pro";
 
