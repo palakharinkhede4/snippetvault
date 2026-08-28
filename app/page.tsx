@@ -183,17 +183,25 @@ export default function LandingPage() {
       <footer className="border-t border-ink/10 px-6 py-10 text-center text-xs text-ink/60">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row">
           <p>SnippetVault — built for people tired of re-writing the same fifteen lines.</p>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-6">
             <Link href="/about" className="font-medium text-teal-dark hover:underline underline-offset-4">
               About Project & Architecture
             </Link>
+            <a
+              href="https://palakharinkhede4.github.io/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-ink/70 hover:text-ink hover:underline underline-offset-4"
+            >
+              Palak's Portfolio
+            </a>
             <a
               href="https://www.linkedin.com/in/palakharinkhede/"
               target="_blank"
               rel="noopener noreferrer"
               className="text-ink/60 hover:text-ink hover:underline underline-offset-4"
             >
-              Created by Palak Harinkhede
+              LinkedIn
             </a>
           </div>
         </div>

@@ -176,9 +176,13 @@ export default function AboutProjectPage() {
         <section className="rounded-card border-2 border-teal/40 bg-white/70 p-6 md:p-10 shadow-sm">
           <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
             <div className="flex flex-col sm:flex-row items-start gap-6">
-              {/* Monogram Avatar */}
-              <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-card bg-ink text-paper font-display text-3xl italic shadow-md border-2 border-amber">
-                PH
+              {/* Profile Image */}
+              <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-card border-2 border-amber shadow-md bg-ink">
+                <img
+                  src="/palak.jpg"
+                  alt="Palak Harinkhede"
+                  className="h-full w-full object-cover object-top"
+                />
               </div>
 
               <div>
@@ -211,6 +215,20 @@ export default function AboutProjectPage() {
               <span className="font-mono text-[11px] uppercase tracking-wider text-ink/50">
                 Connect & Socials
               </span>
+
+              {/* Portfolio */}
+              <a
+                href="https://palakharinkhede4.github.io/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="focus-ring flex items-center justify-between rounded-card border border-amber/50 bg-amber/15 px-4 py-2.5 text-xs font-semibold text-ink transition hover:bg-amber hover:text-ink"
+              >
+                <div className="flex items-center gap-2">
+                  <span>🌐</span>
+                  <span>Portfolio Website</span>
+                </div>
+                <span>↗</span>
+              </a>
 
               {/* LinkedIn */}
               <a
@@ -256,20 +274,6 @@ export default function AboutProjectPage() {
                   <span>SnippetVault Repo</span>
                 </div>
                 <span>★ Star</span>
-              </a>
-
-              {/* Portfolio */}
-              <a
-                href="https://www.linkedin.com/in/palakharinkhede/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="focus-ring flex items-center justify-between rounded-card border border-amber/50 bg-amber/10 px-4 py-2.5 text-xs font-semibold text-ink transition hover:bg-amber hover:text-ink"
-              >
-                <div className="flex items-center gap-2">
-                  <span>💼</span>
-                  <span>Portfolio & Contact</span>
-                </div>
-                <span>↗</span>
               </a>
             </div>
           </div>
@@ -515,12 +519,20 @@ export default function AboutProjectPage() {
               Start Free Drawer →
             </Link>
             <a
+              href="https://palakharinkhede4.github.io/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="focus-ring rounded-card border border-amber/60 bg-amber/15 px-6 py-3 font-medium text-paper transition hover:bg-amber hover:text-ink"
+            >
+              Visit Palak's Portfolio ↗
+            </a>
+            <a
               href="https://www.linkedin.com/in/palakharinkhede/"
               target="_blank"
               rel="noopener noreferrer"
               className="focus-ring rounded-card border border-paper/30 px-6 py-3 font-medium text-paper transition hover:bg-paper hover:text-ink"
             >
-              Connect with Palak on LinkedIn ↗
+              Connect on LinkedIn ↗
             </a>
           </div>
         </section>
@@ -531,7 +543,7 @@ export default function AboutProjectPage() {
       <footer className="border-t border-ink/10 mt-12 px-6 py-10 text-center text-xs text-ink/60">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row">
           <p>SnippetVault — designed & engineered with care by <strong>Palak Harinkhede</strong>.</p>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-6">
             <Link href="/" className="hover:text-ink">
               Home
             </Link>
@@ -539,12 +551,20 @@ export default function AboutProjectPage() {
               Dashboard
             </Link>
             <a
+              href="https://palakharinkhede4.github.io/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-ink underline underline-offset-4"
+            >
+              Portfolio
+            </a>
+            <a
               href="https://github.com/palakharinkhede4/snippetvault"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-ink underline underline-offset-4"
             >
-              GitHub Repository
+              GitHub Repo
             </a>
             <a
               href="https://www.linkedin.com/in/palakharinkhede/"
