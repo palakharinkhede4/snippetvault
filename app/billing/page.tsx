@@ -13,30 +13,50 @@ import { stripe } from "@/lib/stripe";
 // The webhook remains the source of truth for renewals/cancellations — this only covers
 // the initial upgrade moment.
 async function reconcileFromCheckoutSession(sessionId: string, expectedUserId: string) {
-  const checkoutSession = await stripe.checkout.sessions.retrieve(sessionId, {
-    expand: ["subscription"],
-  });
+  try {
+    const checkoutSession = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ["subscription"],
+    });
 
-  if (checkoutSession.payment_status !== "paid") return;
-  if (checkoutSession.metadata?.userId !== expectedUserId) return;
+    if (checkoutSession.metadata?.userId && checkoutSession.metadata.userId !== expectedUserId) {
+      console.warn("User ID mismatch on checkout session:", checkoutSession.metadata.userId, "expected:", expectedUserId);
+      return;
+    }
 
-  const subscription = checkoutSession.subscription;
-  if (!subscription || typeof subscription === "string") return;
+    let subscriptionId: string | undefined;
+    let currentPeriodEnd: Date | null = null;
+    let customerId: string | undefined = typeof checkoutSession.customer === "string"
+      ? checkoutSession.customer
+      : checkoutSession.customer?.id || undefined;
 
-  await prisma.user.update({
-    where: { id: expectedUserId },
-    data: {
-      plan: "pro",
-      stripeSubscriptionId: subscription.id,
-      stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
-    },
-  });
+    const sub = checkoutSession.subscription;
+    if (typeof sub === "string") {
+      const retrievedSub = await stripe.subscriptions.retrieve(sub);
+      subscriptionId = retrievedSub.id;
+      currentPeriodEnd = new Date(retrievedSub.current_period_end * 1000);
+    } else if (sub && typeof sub === "object") {
+      subscriptionId = sub.id;
+      currentPeriodEnd = new Date(sub.current_period_end * 1000);
+    }
+
+    await prisma.user.update({
+      where: { id: expectedUserId },
+      data: {
+        plan: "pro",
+        ...(customerId ? { stripeCustomerId: customerId } : {}),
+        ...(subscriptionId ? { stripeSubscriptionId: subscriptionId } : {}),
+        ...(currentPeriodEnd ? { stripeCurrentPeriodEnd: currentPeriodEnd } : {}),
+      },
+    });
+  } catch (err) {
+    console.error("Could not reconcile checkout session:", err);
+  }
 }
 
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: { session_id?: string };
+  searchParams: { session_id?: string; upgraded?: string };
 }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) redirect("/login");
@@ -44,17 +64,38 @@ export default async function BillingPage({
   const userId = (session.user as any).id;
 
   if (searchParams.session_id) {
+    await reconcileFromCheckoutSession(searchParams.session_id, userId);
+  }
+
+  let user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) redirect("/login");
+
+  // Secondary fallback: if still on free plan but user has a Stripe Customer ID, check if they have an active subscription
+  if (user.plan === "free" && user.stripeCustomerId) {
     try {
-      await reconcileFromCheckoutSession(searchParams.session_id, userId);
+      const subscriptions = await stripe.subscriptions.list({
+        customer: user.stripeCustomerId,
+        status: "active",
+        limit: 1,
+      });
+
+      if (subscriptions.data.length > 0) {
+        const activeSub = subscriptions.data[0];
+        user = await prisma.user.update({
+          where: { id: userId },
+          data: {
+            plan: "pro",
+            stripeSubscriptionId: activeSub.id,
+            stripeCurrentPeriodEnd: new Date(activeSub.current_period_end * 1000),
+          },
+        });
+      }
     } catch (err) {
-      console.error("Could not reconcile checkout session:", err);
+      console.warn("Could not check customer subscriptions for user:", err);
     }
   }
 
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user) redirect("/login");
-
-  const justUpgraded = Boolean(searchParams.session_id) && user.plan === "pro";
+  const justUpgraded = Boolean(searchParams.session_id || searchParams.upgraded) && user.plan === "pro";
 
   return (
     <main className="min-h-screen bg-paper">
