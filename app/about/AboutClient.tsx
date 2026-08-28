@@ -127,40 +127,46 @@ const ARCHITECTURE_FLOWS: FlowData[] = [
   },
   {
     id: "auth-security",
-    name: "3. Hybrid Auth & Email Verification",
-    subtitle: "NextAuth credentials with bcrypt hashing, email sanitization, and OTP verification pipelines",
+    name: "3. Auth & Security Questions Password Reset",
+    subtitle: "Bcrypt hashing, email sanitization, and zero-email challenge-response password recovery",
     steps: [
       {
-        title: "Input Validation & Strict Email Sanitization",
+        title: "Input Validation & Strict Sanitization",
         badge: "Security Layer",
         tech: "lib/emailValidation.ts • lib/passwordValidation.ts",
         description:
-          "Emails are trimmed, lowercased, validated for MX records & syntax, while passwords are evaluated for complexity standards (8+ chars, mix of cases and numbers).",
+          "Emails are normalized & checked for active MX records, while passwords must satisfy 8+ characters, uppercase, lowercase, numbers, and special symbols.",
       },
       {
-        title: "Password Hashing with Bcrypt",
+        title: "Bcrypt Hashing (Passwords & Security Answers)",
         badge: "Cryptography",
         tech: "bcryptjs (10 salt rounds)",
         description:
-          "Passwords are never stored in plaintext. Bcrypt generates salted one-way hashes before inserting into User.passwordHash.",
+          "Neither passwords nor security answers are stored in plaintext. Bcrypt generates salted one-way hashes for both passwordHash and securityAnswerHash.",
         codeSnippet: `const passwordHash = await bcrypt.hash(password, 10);
+const securityAnswerHash = await bcrypt.hash(answer.toLowerCase().trim(), 10);
 await prisma.user.create({
-  data: { email: normalizedEmail, passwordHash, plan: "free" },
+  data: { email, passwordHash, securityQuestion, securityAnswerHash },
 });`,
       },
       {
-        title: "Transactional OTP Dispatch (Optional/2FA)",
-        badge: "Email Provider",
-        tech: "Resend API / SMTP Nodemailer",
+        title: "Zero-Email Challenge-Response Password Reset",
+        badge: "Recovery Protocol",
+        tech: "app/api/auth/reset-password/route.ts",
         description:
-          "When OTP login/verification is requested, a cryptographically random 6-digit code is hashed and stored in OtpToken with a 10-minute TTL, then dispatched via email.",
+          "Users can reset their password anytime without email delivery. The server looks up the user's security question, verifies the hashed answer, and applies the new password securely.",
+        codeSnippet: `const isMatch = await bcrypt.compare(answer.toLowerCase().trim(), user.securityAnswerHash);
+if (isMatch) {
+  const newHash = await bcrypt.hash(newPassword, 10);
+  await prisma.user.update({ where: { id: user.id }, data: { passwordHash: newHash } });
+}`,
       },
       {
         title: "Stateless JWT Session Issuance",
         badge: "Session Manager",
         tech: "NextAuth.js JWT (30-day lifespan)",
         description:
-          "On successful credential verification, NextAuth issues an encrypted JWT cookie containing userId and email, enabling fast, stateless server-side authentication without database session queries.",
+          "On successful credential verification, NextAuth issues an encrypted JWT cookie containing userId and email, enabling fast, stateless server-side authentication without database queries.",
       },
     ],
   },
@@ -363,6 +369,14 @@ export default function AboutClient() {
               <li className="flex justify-between border-b border-dashed border-ink/10 pb-1">
                 <span>emailVerified</span>
                 <span className="text-ink/50">Boolean (false)</span>
+              </li>
+              <li className="flex justify-between border-b border-dashed border-ink/10 pb-1">
+                <span>securityQuestion</span>
+                <span className="text-teal-dark">String?</span>
+              </li>
+              <li className="flex justify-between border-b border-dashed border-ink/10 pb-1">
+                <span>securityAnswerHash</span>
+                <span className="text-ink/50">String (Salted)</span>
               </li>
               <li className="flex justify-between border-b border-dashed border-ink/10 pb-1">
                 <span>plan</span>

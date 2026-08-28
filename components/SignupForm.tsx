@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
+import { SECURITY_QUESTIONS } from "@/lib/securityQuestions";
 
 export default function SignupForm() {
   const router = useRouter();
@@ -13,6 +14,8 @@ export default function SignupForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [securityQuestion, setSecurityQuestion] = useState<string>(SECURITY_QUESTIONS[0]);
+  const [securityAnswer, setSecurityAnswer] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -37,13 +40,24 @@ export default function SignupForm() {
       return;
     }
 
+    if (!securityAnswer.trim() || securityAnswer.trim().length < 2) {
+      setError("Please provide an answer to your security question (at least 2 characters).");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email: email.trim(), password }),
+        body: JSON.stringify({
+          name,
+          email: email.trim(),
+          password,
+          securityQuestion,
+          securityAnswer: securityAnswer.trim(),
+        }),
       });
       const data = await res.json();
 
@@ -153,6 +167,40 @@ export default function SignupForm() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Security Question for Zero-Email Password Recovery */}
+        <div className="border-t border-dashed border-ink/15 pt-4">
+          <div className="flex items-center justify-between">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-teal-dark font-mono">
+              Account Recovery Question
+            </label>
+            <span className="text-[10px] text-ink/50 font-mono">Zero-Email Reset</span>
+          </div>
+          <p className="mt-1 text-xs text-ink/60">
+            Used to securely reset your password if you ever forget it.
+          </p>
+
+          <select
+            value={securityQuestion}
+            onChange={(e) => setSecurityQuestion(e.target.value)}
+            className="focus-ring mt-2 w-full rounded-card border border-ink/20 bg-white px-3 py-2 text-xs"
+          >
+            {SECURITY_QUESTIONS.map((q) => (
+              <option key={q} value={q}>
+                {q}
+              </option>
+            ))}
+          </select>
+
+          <input
+            type="text"
+            required
+            placeholder="Your secret answer (case-insensitive)"
+            value={securityAnswer}
+            onChange={(e) => setSecurityAnswer(e.target.value)}
+            className="focus-ring mt-2 w-full rounded-card border border-ink/20 bg-white px-3 py-2 text-sm"
+          />
         </div>
 
         {error && (

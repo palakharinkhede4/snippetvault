@@ -3,14 +3,29 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { validateRealEmail } from "@/lib/emailValidation";
 import { validatePassword } from "@/lib/passwordValidation";
+import { isValidSecurityQuestion } from "@/lib/securityQuestions";
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password } = await req.json();
+    const { name, email, password, securityQuestion, securityAnswer } = await req.json();
 
     if (!email || !password) {
       return NextResponse.json(
         { error: "Email address and password are required." },
+        { status: 400 }
+      );
+    }
+
+    if (!securityQuestion || !isValidSecurityQuestion(securityQuestion)) {
+      return NextResponse.json(
+        { error: "Please select a valid security question for account recovery." },
+        { status: 400 }
+      );
+    }
+
+    if (!securityAnswer || typeof securityAnswer !== "string" || securityAnswer.trim().length < 2) {
+      return NextResponse.json(
+        { error: "Please provide a security answer of at least 2 characters." },
         { status: 400 }
       );
     }
@@ -45,12 +60,16 @@ export async function POST(req: Request) {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+    const normalizedAnswer = securityAnswer.toLowerCase().trim();
+    const securityAnswerHash = await bcrypt.hash(normalizedAnswer, 10);
 
     const user = await prisma.user.create({
       data: {
         name: name || null,
         email: normalizedEmail,
         passwordHash,
+        securityQuestion,
+        securityAnswerHash,
         emailVerified: true,
       },
     });
@@ -61,3 +80,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Something went wrong. Try again." }, { status: 500 });
   }
 }
+

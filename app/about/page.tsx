@@ -90,7 +90,13 @@ const API_ENDPOINTS = [
     method: "POST",
     path: "/api/register",
     auth: "Public",
-    description: "Create account with email sanitization, password complexity check & bcrypt salt hashing.",
+    description: "Create account with email sanitization, password complexity check, security question & bcrypt hashing.",
+  },
+  {
+    method: "POST",
+    path: "/api/auth/reset-password",
+    auth: "Public",
+    description: "Zero-email password reset via security question answer verification and bcrypt hash update.",
   },
   {
     method: "POST",
